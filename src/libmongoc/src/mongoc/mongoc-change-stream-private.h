@@ -68,9 +68,6 @@ struct _mongoc_change_stream_t {
    bool resumed;
 
    mongoc_client_session_t *implicit_session;
-
-   /* The max_wire_version of the server the change stream is tied to. */
-   uint32_t max_wire_version;
 };
 
 mongoc_change_stream_t *

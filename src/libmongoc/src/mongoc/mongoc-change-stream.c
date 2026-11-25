@@ -31,7 +31,7 @@
 /* the caller knows either a client or server error has occurred.
  * `reply` contains the server reply or an empty document. */
 static bool
-_is_resumable_error(mongoc_change_stream_t *stream, const bson_t *reply)
+_is_resumable_error(const bson_t *reply)
 {
    bson_error_t error = {0};
 
@@ -49,32 +49,9 @@ _is_resumable_error(mongoc_change_stream_t *stream, const bson_t *reply)
       return true;
    }
 
-   if (stream->max_wire_version >= WIRE_VERSION_4_4) {
-      return mongoc_error_has_label(reply, "ResumableChangeStreamError");
-   }
-
-   switch (error.code) {
-   case MONGOC_SERVER_ERR_HOSTUNREACHABLE:
-   case MONGOC_SERVER_ERR_HOSTNOTFOUND:
-   case MONGOC_SERVER_ERR_NETWORKTIMEOUT:
-   case MONGOC_SERVER_ERR_SHUTDOWNINPROGRESS:
-   case MONGOC_SERVER_ERR_PRIMARYSTEPPEDDOWN:
-   case MONGOC_SERVER_ERR_EXCEEDEDTIMELIMIT:
-   case MONGOC_SERVER_ERR_SOCKETEXCEPTION:
-   case MONGOC_SERVER_ERR_NOTPRIMARY:
-   case MONGOC_SERVER_ERR_INTERRUPTEDATSHUTDOWN:
-   case MONGOC_SERVER_ERR_INTERRUPTEDDUETOREPLSTATECHANGE:
-   case MONGOC_SERVER_ERR_NOTPRIMARYNOSECONDARYOK:
-   case MONGOC_SERVER_ERR_NOTPRIMARYORSECONDARY:
-   case MONGOC_SERVER_ERR_STALESHARDVERSION:
-   case MONGOC_SERVER_ERR_STALEEPOCH:
-   case MONGOC_SERVER_ERR_STALECONFIG:
-   case MONGOC_SERVER_ERR_RETRYCHANGESTREAM:
-   case MONGOC_SERVER_ERR_FAILEDTOSATISFYREADPREFERENCE:
-      return true;
-   default:
-      return false;
-   }
+   // Servers 4.4+ (the minimum supported version) mark resumable errors with
+   // the "ResumableChangeStreamError" label.
+   return mongoc_error_has_label(reply, "ResumableChangeStreamError");
 }
 
 
@@ -281,7 +258,6 @@ _make_cursor(mongoc_change_stream_t *stream)
    }
    bson_append_int32(&command_opts, "serverId", 8, server_stream->sd->id);
    bson_append_int32(&getmore_opts, "serverId", 8, server_stream->sd->id);
-   stream->max_wire_version = server_stream->sd->max_wire_version;
    mongoc_server_stream_cleanup(server_stream);
 
    if (stream->read_concern && !bson_has_field(&command_opts, "readConcern")) {
@@ -506,7 +482,7 @@ mongoc_change_stream_next(mongoc_change_stream_t *stream, const bson_t **bson)
          goto end;
       }
 
-      resumable = _is_resumable_error(stream, err_doc);
+      resumable = _is_resumable_error(err_doc);
       int iteration_timeout_count = 0;
       while (resumable) {
          /* recreate the cursor. */
@@ -532,7 +508,7 @@ mongoc_change_stream_next(mongoc_change_stream_t *stream, const bson_t **bson)
             MONGOC_WARNING("Breaking change stream resume loop after two timeouts");
             resumable = false;
          } else {
-            resumable = _is_resumable_error(stream, err_doc);
+            resumable = _is_resumable_error(err_doc);
          }
       }
 

@@ -291,7 +291,7 @@ _mongoc_wire_version_to_server_version(int32_t version)
       return "3.6";
    case 7:
       return "4.0";
-   case WIRE_VERSION_4_2:
+   case 8:
       return "4.2";
    case WIRE_VERSION_4_4:
       return "4.4";

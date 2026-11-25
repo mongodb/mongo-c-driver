@@ -205,11 +205,6 @@ test_getmore_iteration_runner(void *ctx_void)
 {
    test_ctx_t *ctx = ctx_void;
 
-   /* Only run on 4.2 or higher */
-   if (!test_framework_max_wire_version_at_least(8)) {
-      return;
-   }
-
    _run_test_single_or_pooled(test_getmore_iteration, ctx->use_pooled);
 }
 
@@ -274,11 +269,6 @@ static void
 test_not_primary_keep_pool_runner(void *ctx_void)
 {
    test_ctx_t *ctx = ctx_void;
-
-   /* Only run on 4.2 and higher */
-   if (!test_framework_max_wire_version_at_least(8)) {
-      return;
-   }
 
    _run_test_single_or_pooled(test_not_primary_keep_pool, ctx->use_pooled);
 }

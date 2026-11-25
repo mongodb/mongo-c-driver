@@ -159,7 +159,7 @@ test_sdam_cb(void *test_vp)
    static const test_skip_t skips[] = {
       {.description = "Pre-4.2",
        .check_substring = true,
-       .reason = "libmongoc does not support servers older than 4.2"},
+       .reason = "libmongoc does not support servers older than 4.4"},
       {0} // NULL terminated.
    };
 

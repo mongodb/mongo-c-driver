@@ -386,36 +386,6 @@ run_test(void *ctx)
    test_fixture_cleanup(&test_fixture);
 }
 
-static void
-unsupported_long_coll(void *unused)
-{
-   bson_error_t error;
-   bool ret;
-   char *long_coll;
-   mongoc_client_t *client;
-   mongoc_collection_t *coll;
-
-   BSON_UNUSED(unused);
-
-   long_coll = bson_malloc(200);
-   memset(long_coll, 'd', 199);
-   long_coll[199] = '\0';
-
-   client = test_framework_new_default_client();
-   mongoc_client_set_error_api(client, MONGOC_ERROR_API_VERSION_2);
-   coll = mongoc_client_get_collection(client, "test", long_coll);
-   /* Insert. */
-   ret = mongoc_collection_insert_one(coll, tmp_bson("{'x': 1}"), NULL /* opts */, NULL /* reply */, &error);
-   BSON_ASSERT(!ret);
-   /* Error code changed in 4.0 and the message in 4.2. Just validate an error
-    * happened. */
-   BSON_ASSERT(error.code);
-   mongoc_collection_destroy(coll);
-   mongoc_client_destroy(client);
-
-   bson_free(long_coll);
-}
-
 /* 63 characters is still the database length limit. Test this on all server
  * versions. */
 static void
@@ -474,13 +444,6 @@ test_long_namespace_install(TestSuite *suite)
                            collection_rename,
                            test_framework_skip_if_max_wire_version_less_than_9,
                            test_framework_skip_if_mongos);
-
-   TestSuite_AddFull(suite,
-                     "/long_namespace/unsupported_long_coll [lock:live-server]",
-                     unsupported_long_coll,
-                     NULL /* dtor */,
-                     NULL /* ctx */,
-                     test_framework_skip_if_max_wire_version_more_than_8);
 
    TestSuite_AddLive(suite, "/long_namespace/unsupported_long_db", unsupported_long_db);
 }

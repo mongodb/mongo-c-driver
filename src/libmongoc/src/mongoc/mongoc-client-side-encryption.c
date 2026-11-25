@@ -1791,15 +1791,6 @@ _mongoc_cse_auto_encrypt(mongoc_client_t *client_encrypted,
       RETURN(true);
    }
 
-   if (cmd->server_stream->sd->max_wire_version < WIRE_VERSION_CSE) {
-      _mongoc_set_error(error,
-                        MONGOC_ERROR_PROTOCOL,
-                        MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                        "%s",
-                        "Auto-encryption requires a minimum MongoDB version of 4.2");
-      GOTO(fail);
-   }
-
    /* Construct the command we're sending to libmongocrypt. If cmd includes a
     * type 1 payload, convert it to a type 0 payload. */
    bson_destroy(&cmd_bson);

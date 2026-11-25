@@ -16,6 +16,7 @@
 
 #include <mongoc/mongoc-client-private.h>
 
+#include <mongoc/mcd-rpc.h>
 #include <mongoc/mongoc.h>
 
 #include <TestSuite.h>
@@ -26,36 +27,41 @@
 #include <test-conveniences.h>
 #include <test-libmongoc.h>
 
-#define HELLO_SERVER_ONE                 \
-   tmp_str("{'ok': 1,"                   \
-           " 'isWritablePrimary': true," \
-           " 'minWireVersion': %d, "     \
-           " 'maxWireVersion': %d }",    \
-           WIRE_VERSION_MIN,             \
-           WIRE_VERSION_MIN)
+#undef MONGOC_LOG_DOMAIN
+#define MONGOC_LOG_DOMAIN "test_cluster"
 
+/* A mongos just below the exhaust cursor threshold (wire 21 = MongoDB 7.0). */
+#define HELLO_SERVER_ONE                    \
+   tmp_str("{'ok': 1,"                      \
+           " 'isWritablePrimary': true,"    \
+           " 'msg': 'isdbgrid',"            \
+           " 'minWireVersion': %d, "        \
+           " 'maxWireVersion': %d }",       \
+           WIRE_VERSION_MONGOS_EXHAUST - 1, \
+           WIRE_VERSION_MONGOS_EXHAUST - 1)
+
+/* A mongos at the exhaust cursor threshold (wire 22 = MongoDB 7.1). */
 #define HELLO_SERVER_TWO                 \
    tmp_str("{'ok': 1,"                   \
            " 'isWritablePrimary': true," \
+           " 'msg': 'isdbgrid',"         \
            " 'minWireVersion': %d,"      \
            " 'maxWireVersion': %d }",    \
            WIRE_VERSION_MIN,             \
-           WIRE_VERSION_DELETE_HINT)
+           WIRE_VERSION_MONGOS_EXHAUST)
 
-/* run_delete_with_hint_and_wc0 runs a delete command with a "hint" option and
- * unacknowledged write concern.
+/* run_exhaust_find runs a find with the "exhaust" option. The exhaust gate
+ * reads the server description pinned on the connection's server stream.
  *
  * If @expect_error is true, expect a client-side error from a maxWireVersion <
- * WIRE_VERSION_DELETE_HINT. */
+ * WIRE_VERSION_MONGOS_EXHAUST. The server does not receive anything. */
 static void
-run_delete_with_hint_and_wc0(bool expect_error, mongoc_client_t *client, mock_server_t *server)
+run_exhaust_find(bool expect_error, mongoc_client_t *client, mock_server_t *server)
 {
    mongoc_collection_t *coll;
-   mongoc_write_concern_t *wc;
-   bson_t *delete_selector;
-   bson_t *delete_opts;
-   bool r;
-   bson_error_t error;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc = NULL;
+   bson_error_t error = {0};
    future_t *future;
    request_t *request;
 
@@ -63,35 +69,30 @@ run_delete_with_hint_and_wc0(bool expect_error, mongoc_client_t *client, mock_se
 
    coll = mongoc_client_get_collection(client, "db", "coll");
 
-   wc = mongoc_write_concern_new();
-   mongoc_write_concern_set_w(wc, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
+   cursor = mongoc_collection_find_with_opts(coll, tmp_bson("{}"), tmp_bson("{'exhaust': true}"), NULL);
 
-   delete_selector = bson_new();
-   delete_opts = BCON_NEW("hint", "{", "}");
-   r = mongoc_write_concern_append(wc, delete_opts);
-   ASSERT_WITH_MSG(r, "mongoc_write_concern_append failed");
+   future = future_cursor_next(cursor, &doc);
 
-   future = future_collection_delete_one(coll, delete_selector, delete_opts, NULL /* reply */, &error);
    if (expect_error) {
       /* Expect a client side error. The server does not receive anything. */
-      r = future_get_bool(future);
+      ASSERT(!future_get_bool(future));
+      ASSERT(mongoc_cursor_error(cursor, &error));
       ASSERT_ERROR_CONTAINS(error,
-                            MONGOC_ERROR_COMMAND,
-                            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                            "The selected server does not support hint for delete");
-      ASSERT(!r);
+                            MONGOC_ERROR_CURSOR,
+                            MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                            "exhaust cursors require mongos with wire version: 21");
    } else {
-      request = mock_server_receives_msg(
-         server, MONGOC_MSG_MORE_TO_COME, tmp_bson("{ 'delete': 'coll' }"), tmp_bson("{'q': {}, 'hint': {}}"));
-      reply_to_request_with_ok_and_destroy(request);
-      r = future_get_bool(future);
-      ASSERT(r);
+      /* The exhaust find is sent with the exhaust-allowed OP_MSG flag. */
+      request = mock_server_receives_msg(server, MONGOC_OP_MSG_FLAG_EXHAUST_ALLOWED, tmp_bson("{'find': 'coll'}"));
+      reply_to_request_simple(request, "{'cursor': {'id': 0, 'ns': 'db.coll', 'firstBatch': []}, 'ok': 1}");
+      request_destroy(request);
+      /* No documents, but no error either. */
+      ASSERT(!future_get_bool(future));
+      ASSERT(!mongoc_cursor_error(cursor, &error));
    }
 
    future_destroy(future);
-   bson_destroy(delete_opts);
-   bson_destroy(delete_selector);
-   mongoc_write_concern_destroy(wc);
+   mongoc_cursor_destroy(cursor);
    mongoc_collection_destroy(coll);
 }
 
@@ -119,6 +120,16 @@ test_server_stream_ties_server_description_pooled(void *unused)
    pool = test_framework_client_pool_new_from_uri(uri, NULL);
    client_one = mongoc_client_pool_pop(pool);
    client_two = mongoc_client_pool_pop(pool);
+
+   /* The exhaust cursor gate requires a sharded topology. The mock is a
+    * single-seed mongos (topology type "Single" by seed count), so set the
+    * topology type directly; the SDAM transition table only upgrades
+    * "Unknown" to "Sharded". */
+   {
+      mc_tpld_modification tdmod = mc_tpld_modify_begin(client_one->topology);
+      tdmod.new_td->type = MONGOC_TOPOLOGY_SHARDED;
+      mc_tpld_modify_commit(tdmod);
+   }
 
    /* Respond to the monitoring hello with server one hello. */
    request = mock_server_receives_any_hello(server);
@@ -153,23 +164,23 @@ test_server_stream_ties_server_description_pooled(void *unused)
    sd = mongoc_client_select_server(client_two, true /* for writes */, NULL /* read prefs */, &error);
    ASSERT_OR_PRINT(sd, error);
    ASSERT_MATCH(mongoc_server_description_hello_response(sd),
-                tmp_str("{'maxWireVersion': %d}", WIRE_VERSION_DELETE_HINT));
+                tmp_str("{'maxWireVersion': %d}", WIRE_VERSION_MONGOS_EXHAUST));
    mongoc_server_description_destroy(sd);
 
-   /* Expect client_one to continue to use maxWireVersion=WIRE_VERSION_MIN for
-    * wire version checks. Expect an error when using delete with hint and
-    * unacknowledged write concern. */
-   run_delete_with_hint_and_wc0(true, client_one, server);
-   /* Expect client_two to continue to use
-    * maxWireVersion=WIRE_VERSION_DELETE_HINT for wire version checks. Expect no
-    * error when using delete with hint and unacknowledged write concern. */
-   run_delete_with_hint_and_wc0(false, client_two, server);
+   /* Expect client_one to continue to use maxWireVersion=WIRE_VERSION_MONGOS_EXHAUST - 1
+    * for wire version checks (the topology description reports the newer
+    * maxWireVersion from client_two's handshake). Expect an error when using an
+    * exhaust cursor. */
+   run_exhaust_find(true, client_one, server);
+   /* Expect client_two to continue to use maxWireVersion=WIRE_VERSION_MONGOS_EXHAUST
+    * for wire version checks. Expect no error when using an exhaust cursor. */
+   run_exhaust_find(false, client_two, server);
 
-   mock_server_destroy(server);
-   mongoc_uri_destroy(uri);
    mongoc_client_pool_push(pool, client_one);
    mongoc_client_pool_push(pool, client_two);
    mongoc_client_pool_destroy(pool);
+   mongoc_uri_destroy(uri);
+   mock_server_destroy(server);
 }
 
 /* Test that a connection uses the server description from the handshake when
@@ -193,6 +204,16 @@ test_server_stream_ties_server_description_single(void *unused)
    mock_server_run(server);
    uri = mongoc_uri_copy(mock_server_get_uri(server));
    client = test_framework_client_new_from_uri(uri, NULL);
+
+   /* The exhaust cursor gate requires a sharded topology. The mock is a
+    * single-seed mongos (topology type "Single" by seed count), so set the
+    * topology type directly; the SDAM transition table only upgrades
+    * "Unknown" to "Sharded". */
+   {
+      mc_tpld_modification type_tdmod = mc_tpld_modify_begin(client->topology);
+      type_tdmod.new_td->type = MONGOC_TOPOLOGY_SHARDED;
+      mc_tpld_modify_commit(type_tdmod);
+   }
 
    /* Create a connection on client. */
    future = future_client_command_simple(
@@ -229,17 +250,18 @@ test_server_stream_ties_server_description_single(void *unused)
    /* Check that selecting the server returns the first server */
    sd = mongoc_client_select_server(client, true /* for writes */, NULL /* read prefs */, &error);
    ASSERT_OR_PRINT(sd, error);
-   ASSERT_MATCH(mongoc_server_description_hello_response(sd), tmp_str("{'maxWireVersion': %d}", WIRE_VERSION_MIN));
+   ASSERT_MATCH(mongoc_server_description_hello_response(sd),
+                tmp_str("{'maxWireVersion': %d}", WIRE_VERSION_MONGOS_EXHAUST - 1));
    mongoc_server_description_destroy(sd);
 
-   /* Expect client to continue to use maxWireVersion=WIRE_VERSION_DELETE_HINT
-    * for wire version checks. Expect no error when using delete with hint and
-    * unacknowledged write concern. */
-   run_delete_with_hint_and_wc0(false, client, server);
+   /* Expect client to continue to use maxWireVersion=WIRE_VERSION_MONGOS_EXHAUST
+    * for wire version checks (the topology description reports the older
+    * maxWireVersion). Expect no error when using an exhaust cursor. */
+   run_exhaust_find(false, client, server);
 
-   mock_server_destroy(server);
-   mongoc_uri_destroy(uri);
    mongoc_client_destroy(client);
+   mongoc_uri_destroy(uri);
+   mock_server_destroy(server);
 }
 
 

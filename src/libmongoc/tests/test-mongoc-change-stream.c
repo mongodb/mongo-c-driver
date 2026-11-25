@@ -58,13 +58,10 @@ _setup_for_resume(mongoc_change_stream_t *stream)
    const char *cmd;
 
    client = stream->cursor->client;
-   if (stream->max_wire_version >= WIRE_VERSION_4_4) {
-      cmd = "{'configureFailPoint': 'failGetMoreAfterCursorCheckout', 'mode': "
-            "{ 'times': 1 }, 'data': { 'errorCode': 6 }}";
-   } else {
-      cmd = "{'configureFailPoint': 'failCommand', 'mode': { 'times': 1 }, "
-            "'data': { 'failCommands': ['getMore'], 'errorCode': 6 }}";
-   }
+   // Servers 4.4+ (the minimum supported version) support
+   // 'failGetMoreAfterCursorCheckout'.
+   cmd = "{'configureFailPoint': 'failGetMoreAfterCursorCheckout', 'mode': "
+         "{ 'times': 1 }, 'data': { 'errorCode': 6 }}";
    ret = mongoc_client_command_simple_with_server_id(
       client, "admin", tmp_bson(cmd), NULL /* read prefs */, stream->cursor->server_id, NULL /* reply */, &error);
    ASSERT_OR_PRINT(ret, error);
@@ -551,17 +548,21 @@ _test_getmore_error(const char *server_reply, bool should_resume, bool resume_ki
 }
 
 /* Test a variety of resumable and non-resumable errors that may be returned
- * from a getMore. */
+ * from a getMore. Servers 4.4+ (the minimum supported version) classify
+ * resumability by the "ResumableChangeStreamError" label. */
 static void
 test_getmore_errors(void)
 {
    _test_getmore_error(
       "{'ok': 0, 'code': 1, 'errmsg': 'internal error'}", false /* should_resume */, false /* ignored */);
-   _test_getmore_error(
-      "{'ok': 0, 'code': 6, 'errmsg': 'host unreachable'}", true /* should_resume */, true /* resume_kills_cursor */);
+   _test_getmore_error("{'ok': 0, 'code': 6, 'errorLabels': ['ResumableChangeStreamError'], 'errmsg': "
+                       "'host unreachable'}",
+                       true /* should_resume */,
+                       true /* resume_kills_cursor */);
    _test_getmore_error(
       "{'ok': 0, 'code': 12345, 'errmsg': 'random error'}", false /* should_resume */, false /* ignored */);
-   /* most error codes are resumable, excluding a few deny listed ones. */
+   _test_getmore_error(
+      "{'ok': 0, 'code': 6, 'errmsg': 'host unreachable'}", false /* should_resume */, false /* ignored */);
    _test_getmore_error(
       "{'ok': 0, 'code': 11601, 'errmsg': 'interrupted'}", false /* should_resume */, false /* ignored */);
    _test_getmore_error(
@@ -569,16 +570,20 @@ test_getmore_errors(void)
    _test_getmore_error(
       "{'ok': 0, 'code': 237, 'errmsg': 'cursor killed'}", false /* should_resume */, false /* ignored */);
    _test_getmore_error("{'ok': 0, 'errmsg': 'random error'}", false /* should_resume */, false /* ignored */);
-   /* Even an error with a 'NonResumableChangeStreamError' label will resume if
-    * it is on the allow list. */
+   /* An error labeled 'ResumableChangeStreamError' resumes regardless of its
+    * code; other labels do not cause a resume. */
+   _test_getmore_error("{'ok': 0, 'code': 1, 'errorLabels': "
+                       "['ResumableChangeStreamError'], 'errmsg': 'internal error'}",
+                       true /* should_resume */,
+                       true /* resume_kills_cursor */);
    _test_getmore_error("{'ok': 0, 'code': 6, 'errorLabels': "
                        "['NonResumableChangeStreamError'], 'errmsg': 'host unreachable'}",
-                       true /* should_resume */,
-                       true /* resume_kills_cursor */);
+                       false /* should_resume */,
+                       false /* ignored */);
    _test_getmore_error("{'ok': 0, 'code': 6, 'errorLabels': "
                        "['NonRetryableChangeStreamError'], 'errmsg': 'host unreachable'}",
-                       true /* should_resume */,
-                       true /* resume_kills_cursor */);
+                       false /* should_resume */,
+                       false /* ignored */);
 }
 /* From Change Streams Spec tests:
  * "ChangeStream will automatically resume one time on a resumable error
@@ -600,7 +605,10 @@ test_change_stream_resumable_error(void)
    bson_error_t err;
    const bson_t *err_doc = NULL;
    const bson_t *next_doc = NULL;
-   const char *not_primary_err = "{ 'code': 10107, 'errmsg': 'not primary', 'ok': 0 }";
+   const char *not_primary_err =
+      "{ 'code': 10107, 'errmsg': 'not primary', 'errorLabels': ['ResumableChangeStreamError'], 'ok': 0 }";
+   /* No "ResumableChangeStreamError" label: not resumable on server 4.4+, so
+    * the change stream reports the error instead of resuming. */
    const char *interrupted_err = "{ 'code': 11601, 'errmsg': 'interrupted', 'ok': 0 }";
    const bson_t *watch_cmd = tmp_bson("{'$db': 'db',"
                                       " 'aggregate': 'coll',"
@@ -717,7 +725,9 @@ test_change_stream_resumable_error(void)
 
    future = future_change_stream_next(stream, &next_doc);
    request = mock_server_receives_msg(server, MONGOC_MSG_NONE, tmp_bson(expected_msg, 123));
-   reply_to_request_simple(request, "{ 'code': 10107, 'errmsg': 'not primary', 'ok': 0 }");
+   reply_to_request_simple(request,
+                           "{ 'code': 10107, 'errmsg': 'not primary', "
+                           "'errorLabels': ['ResumableChangeStreamError'], 'ok': 0 }");
    request_destroy(request);
 
    /* The "not primary" error does not cause the client to close connection. Expect a killCursors. */

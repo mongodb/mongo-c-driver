@@ -35,9 +35,9 @@ COMPILE_MATRIX = [
 ]
 
 TEST_MATRIX = [
-    ('rhel8-latest',       'gcc', None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', '9.0', 'rapid', 'latest']),
+    ('rhel8-latest',       'gcc', None, 'cyrus', ['auth'], ['server'], ['4.4', '5.0', '6.0', '7.0', '8.0', '9.0', 'rapid', 'latest']),
     ('rhel8-arm64-latest', 'gcc', None, 'cyrus', ['auth'], ['server'], [       '4.4', '5.0', '6.0', '7.0', '8.0', '9.0', 'rapid', 'latest']),
-    ('rhel8-power',        'gcc', None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', '9.0', 'rapid', 'latest']),
+    ('rhel8-power',        'gcc', None, 'cyrus', ['auth'], ['server'], ['4.4', '5.0', '6.0', '7.0', '8.0', '9.0', 'rapid', 'latest']),
     ('rhel8-zseries',      'gcc', None, 'cyrus', ['auth'], ['server'], [              '5.0', '6.0', '7.0', '8.0', '9.0', 'rapid', 'latest']),
 
     ('windows-2022-latest',  'vs2022x64', None, 'sspi', ['auth'], ['server'], ['9.0', 'rapid', 'latest']),
