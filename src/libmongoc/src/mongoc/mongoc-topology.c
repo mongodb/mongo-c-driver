@@ -36,6 +36,7 @@
 #include <mongoc/utlist.h>
 
 #include <mlib/cmp.h>
+#include <mlib/timer.h>
 
 #include <stdint.h>
 
@@ -489,6 +490,10 @@ mongoc_topology_new(const mongoc_uri_t *uri, bool single_threaded)
    _mongoc_topology_scanner_set_oidc_cache(topology->scanner, topology->oidc_cache);
    bson_mutex_init(&topology->tpld_modification_mtx);
    mongoc_cond_init(&topology->cond_client);
+   bson_mutex_init(&topology->max_connecting_mutex);
+   mongoc_cond_init(&topology->max_connecting_cond);
+   topology->max_connecting = (uint32_t)BSON_MAX(
+      1, mongoc_uri_get_option_as_int32(topology->uri, MONGOC_URI_MAXCONNECTING, 2));
 
    if (single_threaded) {
       /* single threaded drivers attempt speculative authentication during a
@@ -664,6 +669,64 @@ mongoc_topology_new(const mongoc_uri_t *uri, bool single_threaded)
    return topology;
 }
 
+static mongoc_connecting_count_t *
+_topology_connecting_count(mongoc_topology_t *topology, uint32_t server_id)
+{
+   mongoc_connecting_count_t *entry;
+   for (entry = topology->connecting_counts; entry; entry = entry->next) {
+      if (entry->server_id == server_id) {
+         return entry;
+      }
+   }
+   entry = bson_malloc0(sizeof *entry);
+   entry->server_id = server_id;
+   entry->next = topology->connecting_counts;
+   topology->connecting_counts = entry;
+   return entry;
+}
+
+bool
+_mongoc_topology_connecting_acquire(mongoc_topology_t *topology,
+                                    uint32_t server_id,
+                                    int64_t timeout_ms,
+                                    bson_error_t *error)
+{
+   BSON_ASSERT(timeout_ms > 0);
+   const mlib_timer deadline = mlib_expires_after(timeout_ms, ms);
+   bson_mutex_lock(&topology->max_connecting_mutex);
+   mongoc_connecting_count_t *const entry = _topology_connecting_count(topology, server_id);
+   while (entry->count >= topology->max_connecting) {
+      if (mlib_timer_is_expired(deadline)) {
+         bson_mutex_unlock(&topology->max_connecting_mutex);
+         _mongoc_set_error(error,
+                           MONGOC_ERROR_CLIENT,
+                           MONGOC_ERROR_CLIENT_NOT_READY,
+                           "Timed out waiting for a maxConnecting slot for server %u after %" PRId64 " ms",
+                           server_id,
+                           timeout_ms);
+         return false;
+      }
+      mongoc_cond_timedwait(&topology->max_connecting_cond,
+                            &topology->max_connecting_mutex,
+                            mlib_milliseconds_count(mlib_timer_remaining(deadline)));
+   }
+   entry->count++;
+   bson_mutex_unlock(&topology->max_connecting_mutex);
+   return true;
+}
+
+void
+_mongoc_topology_connecting_release(mongoc_topology_t *topology, uint32_t server_id)
+{
+   bson_mutex_lock(&topology->max_connecting_mutex);
+   mongoc_connecting_count_t *const entry = _topology_connecting_count(topology, server_id);
+   BSON_ASSERT(entry->count > 0);
+   entry->count--;
+   /* Waiters have different predicates because the limit is per server. */
+   mongoc_cond_broadcast(&topology->max_connecting_cond);
+   bson_mutex_unlock(&topology->max_connecting_mutex);
+}
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -737,6 +800,13 @@ mongoc_topology_destroy(mongoc_topology_t *topology)
    mongoc_log_and_monitor_instance_destroy_contents(&topology->log_and_monitor);
 
    mongoc_cond_destroy(&topology->cond_client);
+   mongoc_cond_destroy(&topology->max_connecting_cond);
+   bson_mutex_destroy(&topology->max_connecting_mutex);
+   while (topology->connecting_counts) {
+      mongoc_connecting_count_t *next = topology->connecting_counts->next;
+      bson_free(topology->connecting_counts);
+      topology->connecting_counts = next;
+   }
    bson_mutex_destroy(&topology->tpld_modification_mtx);
 
    bson_destroy(topology->encrypted_fields_map);

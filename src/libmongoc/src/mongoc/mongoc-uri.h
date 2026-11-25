@@ -47,6 +47,7 @@
 #define MONGOC_URI_LOADBALANCED "loadbalanced"
 #define MONGOC_URI_LOCALTHRESHOLDMS "localthresholdms"
 #define MONGOC_URI_MAXPOOLSIZE "maxpoolsize"
+#define MONGOC_URI_MAXCONNECTING "maxconnecting"
 #define MONGOC_URI_MAXSTALENESSSECONDS "maxstalenessseconds"
 #define MONGOC_URI_READCONCERNLEVEL "readconcernlevel"
 #define MONGOC_URI_READPREFERENCE "readpreference"
