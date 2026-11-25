@@ -288,7 +288,7 @@ mongoc_uri_validate_srv_result(const mongoc_uri_t *uri, const char *host, bson_e
          BSON_ASSERT(first_dot);
          bson_strncpy(srv_host, first_dot, sizeof srv_host);
       } else {
-         const int n = snprintf(srv_host, sizeof srv_host, ".%s", srv_hostname_canonical.data);
+         const int n = bson_snprintf(srv_host, sizeof srv_host, ".%s", srv_hostname_canonical.data);
          BSON_ASSERT(n > 0);
       }
 
