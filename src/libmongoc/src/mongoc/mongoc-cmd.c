@@ -641,7 +641,7 @@ _is_retryable_write(const mongoc_cmd_parts_t *parts, const mongoc_server_stream_
       return false;
    }
 
-   if (!mongoc_uri_get_option_as_bool(parts->client->uri, MONGOC_URI_RETRYWRITES, MONGOC_DEFAULT_RETRYWRITES)) {
+   if (!parts->client->retry_writes) {
       return false;
    }
 
@@ -671,7 +671,7 @@ _is_retryable_read(const mongoc_cmd_parts_t *parts, const mongoc_server_stream_t
       return false;
    }
 
-   if (!mongoc_uri_get_option_as_bool(parts->client->uri, MONGOC_URI_RETRYREADS, MONGOC_DEFAULT_RETRYREADS)) {
+   if (!parts->client->retry_reads) {
       return false;
    }
 
