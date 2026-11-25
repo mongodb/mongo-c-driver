@@ -7,6 +7,32 @@ libmongoc 2.6.0 [unreleased]
 * Raise required version of libmongocrypt from 1.20.0 to 1.21.0 to support In-Use Encryption (corresponds to the CMake option: `ENABLE_CLIENT_SIDE_ENCRYPTION`).
   * The `prefixPreview`, `suffixPreview`, and `substringPreview` query types are no longer supported by In-Use Encryption and now return an error. Use the `prefix`, `suffix`, and `substring` query types instead.
 
+libmongoc 2.5.10
+================
+
+## Fixes
+
+* Fix improper validation of OCSP responder authorization.
+* Fix incorrect AWS credential selection when a process-wide credential cache is populated.
+* Fix possible abort or invalid memory access when handling malformed server replies.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+
+libmongoc 1.30.17
+=================
+
+## Fixes
+
+* Fix improper validation of OCSP responder authorization.
+* Fix incorrect AWS credential selection when a process-wide credential cache is populated.
+* Fix possible abort or invalid memory access when handling malformed server replies.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+
 
 libmongoc 2.5.9
 ===============
