@@ -175,11 +175,11 @@ test_server_stream_ties_server_description_pooled(void *unused)
     * for wire version checks. Expect no error when using an exhaust cursor. */
    run_exhaust_find(false, client_two, server);
 
-   mock_server_destroy(server);
-   mongoc_uri_destroy(uri);
    mongoc_client_pool_push(pool, client_one);
    mongoc_client_pool_push(pool, client_two);
    mongoc_client_pool_destroy(pool);
+   mongoc_uri_destroy(uri);
+   mock_server_destroy(server);
 }
 
 /* Test that a connection uses the server description from the handshake when
@@ -258,9 +258,9 @@ test_server_stream_ties_server_description_single(void *unused)
     * maxWireVersion). Expect no error when using an exhaust cursor. */
    run_exhaust_find(false, client, server);
 
-   mock_server_destroy(server);
-   mongoc_uri_destroy(uri);
    mongoc_client_destroy(client);
+   mongoc_uri_destroy(uri);
+   mock_server_destroy(server);
 }
 
 
