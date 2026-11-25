@@ -367,6 +367,78 @@ test_aws_cache(void *unused)
    _mongoc_aws_credentials_cleanup(&valid_creds);
 }
 
+// Regression test for CDRIVER-6511.
+// Test cached credentials are ignored when URI credentials are set.
+static void
+test_cache_overrides_uri_credentials(void *unused)
+{
+   mongoc_uri_t *uri;
+   _mongoc_aws_credentials_t creds;
+   _mongoc_aws_credentials_t cached;
+   bool ret;
+   bson_error_t error;
+
+   BSON_UNUSED(unused);
+
+   // "clear" environment variables by setting them to the empty string.
+   _mongoc_setenv("AWS_ACCESS_KEY_ID", "");
+   _mongoc_setenv("AWS_SECRET_ACCESS_KEY", "");
+   _mongoc_setenv("AWS_SESSION_TOKEN", "");
+
+   // Prime the cache as the ECS fetch path would: an expiring credential.
+   cached = MONGOC_AWS_CREDENTIALS_INIT;
+   cached.access_key_id = bson_strdup("AKIA_SYNTH_HIGH");
+   cached.secret_access_key = bson_strdup("SYNTH_HIGH_SECRET");
+   cached.session_token = bson_strdup("SYNTH_HIGH_SESSION_TOKEN");
+   cached.expiration.set = true;
+   cached.expiration.value = mlib_expires_after(mlib_duration(1, h));
+
+   // Control: with an empty cache, URI credentials are used.
+   _mongoc_aws_credentials_cache_clear();
+   uri = mongoc_uri_new_with_error("mongodb://AKIA_SYNTH_LOW:SYNTH_LOW_SECRET@localhost/?authMechanism=MONGODB-AWS",
+                                   &error);
+   ASSERT_OR_PRINT(uri, error);
+   ret = _mongoc_aws_credentials_obtain(uri, &creds, &error);
+   ASSERT_OR_PRINT(ret, error);
+   ASSERT_CMPSTR(creds.access_key_id, "AKIA_SYNTH_LOW");
+   ASSERT_CMPSTR(creds.secret_access_key, "SYNTH_LOW_SECRET");
+   ASSERT_CMPSTR(creds.session_token, NULL);
+   _mongoc_aws_credentials_cleanup(&creds);
+   mongoc_uri_destroy(uri);
+
+   // With an unexpired cached credential, expect the URI credentials are still used.
+   _mongoc_aws_credentials_cache_put(&cached);
+   uri = mongoc_uri_new_with_error("mongodb://AKIA_SYNTH_LOW:SYNTH_LOW_SECRET@localhost/?authMechanism=MONGODB-AWS",
+                                   &error);
+   ASSERT_OR_PRINT(uri, error);
+   ret = _mongoc_aws_credentials_obtain(uri, &creds, &error);
+   ASSERT_OR_PRINT(ret, error);
+   ASSERT_CMPSTR(creds.access_key_id, "AKIA_SYNTH_LOW");
+   ASSERT_CMPSTR(creds.secret_access_key, "SYNTH_LOW_SECRET");
+   ASSERT_CMPSTR(creds.session_token, NULL);
+   _mongoc_aws_credentials_cleanup(&creds);
+   mongoc_uri_destroy(uri);
+
+   // Control: expired cached credentials are not used; URI credentials win.
+   mongoc_aws_credentials_cache.cached.value.expiration.value = mlib_expires_after(mlib_duration(-1, mn));
+   uri = mongoc_uri_new_with_error("mongodb://AKIA_SYNTH_LOW:SYNTH_LOW_SECRET@localhost/?authMechanism=MONGODB-AWS",
+                                   &error);
+   ASSERT_OR_PRINT(uri, error);
+   ret = _mongoc_aws_credentials_obtain(uri, &creds, &error);
+   ASSERT_OR_PRINT(ret, error);
+   ASSERT_CMPSTR(creds.access_key_id, "AKIA_SYNTH_LOW");
+   _mongoc_aws_credentials_cleanup(&creds);
+   mongoc_uri_destroy(uri);
+
+   _mongoc_aws_credentials_cache_clear();
+   _mongoc_aws_credentials_cleanup(&cached);
+
+   // "clear" environment variables by setting them to the empty string.
+   _mongoc_setenv("AWS_ACCESS_KEY_ID", "");
+   _mongoc_setenv("AWS_SECRET_ACCESS_KEY", "");
+   _mongoc_setenv("AWS_SESSION_TOKEN", "");
+}
+
 void
 test_aws_install(TestSuite *suite)
 {
@@ -394,4 +466,11 @@ test_aws_install(TestSuite *suite)
                      test_framework_skip_if_no_setenv);
    TestSuite_AddFull(
       suite, "/aws/cache", test_aws_cache, NULL /* dtor */, NULL /* ctx */, test_framework_skip_if_no_aws);
+   TestSuite_AddFull(suite,
+                     "/aws/cache_overrides_uri_credentials",
+                     test_cache_overrides_uri_credentials,
+                     NULL /* dtor */,
+                     NULL /* ctx */,
+                     test_framework_skip_if_no_aws,
+                     test_framework_skip_if_no_setenv);
 }
