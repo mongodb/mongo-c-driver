@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::bson::{BsonT, BsonViewT};
+use crate::aggregate_options::AggregateOptionsT;
+use crate::bson::{BsonT, BsonViewArrayT, BsonViewT};
 use crate::client::ClientT;
 use crate::client_session::ClientSessionT;
 use crate::collection::CollectionT;
@@ -24,6 +25,7 @@ use crate::drop_database_options::DropDatabaseOptionsT;
 use crate::error::ErrorT;
 use crate::future::FutureT;
 use crate::private::macros::*;
+use crate::private::pipeline::to_documents;
 use crate::run_command_options::RunCommandOptionsT;
 use crate::run_cursor_command_options::RunCursorCommandOptionsT;
 use crate::runtime::{RuntimeAware, RuntimeT};
@@ -32,7 +34,8 @@ use crate::string::StringViewT;
 use mongodb::Database;
 use mongodb::bson::{RawDocument, RawDocumentBuf};
 use mongodb::options::{
-    CreateCollectionOptions, DropDatabaseOptions, RunCommandOptions, RunCursorCommandOptions,
+    AggregateOptions, CreateCollectionOptions, DropDatabaseOptions, RunCommandOptions,
+    RunCursorCommandOptions,
 };
 
 #[derive(Clone)]
@@ -72,6 +75,41 @@ pub extern "C" fn mongoac_database_get_collection(
 #[unsafe(no_mangle)]
 pub extern "C" fn mongoac_database_get_name(db: *const DatabaseT) -> StringViewT {
     safe_as_ref!(db).get_name().into()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_database_aggregate(
+    db: *const DatabaseT,
+    session: *mut ClientSessionT,
+    pipeline: BsonViewArrayT,
+    options: *const AggregateOptionsT,
+    error: *mut ErrorT,
+) -> *mut CursorT {
+    let error = safe_optional_error_as_mut!(error);
+    let db = safe_as_ref_with_error!(db, error);
+    let session = safe_optional_as_mut!(session);
+    let pipeline = safe_bson_view_array_with_error!(pipeline, error);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(safe_result!(
+        db.aggregate(session, pipeline, options),
+        error
+    ))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_database_aggregate_async(
+    db: *const DatabaseT,
+    session: *mut ClientSessionT,
+    pipeline: BsonViewArrayT,
+    options: *const AggregateOptionsT,
+) -> *mut FutureT {
+    let db = safe_as_ref!(db);
+    let session = safe_optional_as_mut!(session);
+    let pipeline = safe_bson_view_array!(pipeline);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(db.aggregate_async(session, pipeline, options))
 }
 
 #[unsafe(no_mangle)]
@@ -242,6 +280,53 @@ impl DatabaseT {
         self.inner.name()
     }
 
+    fn aggregate(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        pipeline: Vec<&RawDocument>,
+        options: Option<&AggregateOptionsT>,
+    ) -> Result<CursorT, ErrorT> {
+        let pipeline: Vec<RawDocumentBuf> = pipeline.into_iter().map(ToOwned::to_owned).collect();
+
+        self.runtime.block_on(async {
+            let pipeline = to_documents(&pipeline)?;
+
+            cursor_session_op!(
+                self.inner
+                    .aggregate(pipeline)
+                    .with_type::<RawDocumentBuf>()
+                    .with_options(options.map(Into::into)),
+                session,
+                self.runtime.downgrade()
+            )
+        })
+    }
+
+    fn aggregate_async(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        pipeline: Vec<&RawDocument>,
+        options: Option<&AggregateOptionsT>,
+    ) -> FutureT {
+        let db = self.inner.clone();
+        let runtime = self.runtime.downgrade();
+        let session = session.map(|s| s.clone());
+        let pipeline: Vec<RawDocumentBuf> = pipeline.into_iter().map(ToOwned::to_owned).collect();
+        let options: Option<AggregateOptions> = options.map(Into::into);
+
+        self.spawn::<CursorT>(async move {
+            let pipeline = to_documents(&pipeline)?;
+
+            cursor_session_op!(
+                db.aggregate(pipeline)
+                    .with_type::<RawDocumentBuf>()
+                    .with_options(options),
+                session,
+                runtime
+            )
+        })
+    }
+
     fn create_collection(
         &self,
         session: Option<&mut ClientSessionT>,
@@ -373,7 +458,6 @@ impl DatabaseT {
         })
     }
 
-    // TODO: aggregate
     // TODO: gridfs_bucket
     // TODO: list_collection_names
     // TODO: list_collections

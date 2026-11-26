@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::aggregate_options::AggregateOptionsT;
 use crate::bson::{BsonT, BsonViewArrayT, BsonViewT};
 use crate::client::ClientT;
 use crate::client_session::ClientSessionT;
 use crate::collection_options::CollectionOptionsT;
 use crate::count_options::CountOptionsT;
+use crate::cursor::CursorT;
 use crate::delete_options::DeleteOptionsT;
 use crate::delete_result::DeleteResultT;
 use crate::drop_collection_options::DropCollectionOptionsT;
@@ -29,14 +31,15 @@ use crate::insert_many_result::InsertManyResultT;
 use crate::insert_one_options::InsertOneOptionsT;
 use crate::insert_one_result::InsertOneResultT;
 use crate::private::macros::*;
+use crate::private::pipeline::to_documents;
 use crate::runtime::{RuntimeAware, RuntimeT};
 use crate::string::StringViewT;
 
 use mongodb::Collection;
 use mongodb::bson::{Document, RawDocument, RawDocumentBuf};
 use mongodb::options::{
-    CountOptions, DeleteOptions, DropCollectionOptions, EstimatedDocumentCountOptions,
-    FindOneOptions, InsertManyOptions, InsertOneOptions,
+    AggregateOptions, CountOptions, DeleteOptions, DropCollectionOptions,
+    EstimatedDocumentCountOptions, FindOneOptions, InsertManyOptions, InsertOneOptions,
 };
 use mongodb::results::{DeleteResult, InsertManyResult, InsertOneResult};
 
@@ -64,6 +67,41 @@ pub extern "C" fn mongoac_collection_get_client(coll: *const CollectionT) -> *mu
 #[unsafe(no_mangle)]
 pub extern "C" fn mongoac_collection_get_name(coll: *const CollectionT) -> StringViewT {
     safe_as_ref!(coll).get_name().into()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_aggregate(
+    coll: *const CollectionT,
+    session: *mut ClientSessionT,
+    pipeline: BsonViewArrayT,
+    options: *const AggregateOptionsT,
+    error: *mut ErrorT,
+) -> *mut CursorT {
+    let error = safe_optional_error_as_mut!(error);
+    let coll = safe_as_ref_with_error!(coll, error);
+    let session = safe_optional_as_mut!(session);
+    let pipeline = safe_bson_view_array_with_error!(pipeline, error);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(safe_result!(
+        coll.aggregate(session, pipeline, options),
+        error
+    ))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_aggregate_async(
+    coll: *const CollectionT,
+    session: *mut ClientSessionT,
+    pipeline: BsonViewArrayT,
+    options: *const AggregateOptionsT,
+) -> *mut FutureT {
+    let coll = safe_as_ref!(coll);
+    let session = safe_optional_as_mut!(session);
+    let pipeline = safe_bson_view_array!(pipeline);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(coll.aggregate_async(session, pipeline, options))
 }
 
 #[unsafe(no_mangle)]
@@ -351,6 +389,53 @@ impl CollectionT {
         self.inner.name()
     }
 
+    fn aggregate(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        pipeline: Vec<&RawDocument>,
+        options: Option<&AggregateOptionsT>,
+    ) -> Result<CursorT, ErrorT> {
+        let pipeline: Vec<RawDocumentBuf> = pipeline.into_iter().map(ToOwned::to_owned).collect();
+
+        self.runtime.block_on(async {
+            let pipeline = to_documents(&pipeline)?;
+
+            cursor_session_op!(
+                self.inner
+                    .aggregate(pipeline)
+                    .with_type::<RawDocumentBuf>()
+                    .with_options(options.map(Into::into)),
+                session,
+                self.runtime.downgrade()
+            )
+        })
+    }
+
+    fn aggregate_async(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        pipeline: Vec<&RawDocument>,
+        options: Option<&AggregateOptionsT>,
+    ) -> FutureT {
+        let coll = self.inner.clone();
+        let runtime = self.runtime.downgrade();
+        let session = session.map(|s| s.clone());
+        let pipeline: Vec<RawDocumentBuf> = pipeline.into_iter().map(ToOwned::to_owned).collect();
+        let options: Option<AggregateOptions> = options.map(Into::into);
+
+        self.spawn::<CursorT>(async move {
+            let pipeline = to_documents(&pipeline)?;
+
+            cursor_session_op!(
+                coll.aggregate(pipeline)
+                    .with_type::<RawDocumentBuf>()
+                    .with_options(options),
+                session,
+                runtime
+            )
+        })
+    }
+
     fn count_documents(
         &self,
         session: Option<&mut ClientSessionT>,
@@ -614,7 +699,6 @@ impl CollectionT {
         })
     }
 
-    // TODO: aggregate
     // TODO: create_index
     // TODO: create_indexes
     // TODO: create_search_index

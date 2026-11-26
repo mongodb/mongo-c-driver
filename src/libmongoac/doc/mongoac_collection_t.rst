@@ -39,6 +39,9 @@ The associated runtime may be obtained with :symbol:`mongoac_collection_get_runt
     mongoac_collection_get_runtime
     mongoac_collection_get_runtime_address
 
+    mongoac_collection_aggregate
+    mongoac_collection_aggregate_async
+
     mongoac_collection_count_documents
     mongoac_collection_count_documents_async
 

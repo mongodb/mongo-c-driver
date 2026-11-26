@@ -47,6 +47,7 @@ fn generate_header() -> String {
 // Rename structs from `ExampleT` to `mongoac_example_t`.
 fn rename_structs() -> std::collections::HashMap<String, String> {
     let pairs: &[(&str, &str)] = &[
+        ("AggregateOptionsT", "mongoac_aggregate_options_t"),
         ("BsonArrayT", "mongoac_bson_array_t"),
         ("BsonT", "mongoac_bson_t"),
         ("BsonViewArrayT", "mongoac_bson_view_array_t"),
@@ -109,15 +110,18 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
     {
         #[allow(clippy::match_same_arms)]
         let headers: &[&str] = match name {
+            "aggregate_options" => &[],
             "bson" => &["stdint.h"],
             "client_options" => &[],
             "client_session" => &["mongoac/bson.h", "mongoac/error-fwd.h"],
             "collection_options" => &[],
             "collection" => &[
+                "mongoac/aggregate_options-fwd.h",
                 "mongoac/bson.h",
                 "mongoac/client_session-fwd.h",
                 "mongoac/client-fwd.h",
                 "mongoac/count_options-fwd.h",
+                "mongoac/cursor-fwd.h",
                 "mongoac/delete_options-fwd.h",
                 "mongoac/delete_result-fwd.h",
                 "mongoac/drop_collection_options-fwd.h",
@@ -155,6 +159,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
             "cursor_type" => &["stdint.h"],
             "database_options" => &[],
             "database" => &[
+                "mongoac/aggregate_options-fwd.h",
                 "mongoac/bson.h",
                 "mongoac/client_session-fwd.h",
                 "mongoac/client-fwd.h",
