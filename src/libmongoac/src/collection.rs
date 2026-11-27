@@ -17,12 +17,14 @@ use crate::client::ClientT;
 use crate::client_session::ClientSessionT;
 use crate::collection_options::CollectionOptionsT;
 use crate::count_options::CountOptionsT;
+use crate::cursor::CursorT;
 use crate::delete_options::DeleteOptionsT;
 use crate::delete_result::DeleteResultT;
 use crate::drop_collection_options::DropCollectionOptionsT;
 use crate::error::ErrorT;
 use crate::estimated_document_count_options::EstimatedDocumentCountOptionsT;
 use crate::find_one_options::FindOneOptionsT;
+use crate::find_options::FindOptionsT;
 use crate::future::FutureT;
 use crate::insert_many_options::InsertManyOptionsT;
 use crate::insert_many_result::InsertManyResultT;
@@ -36,7 +38,7 @@ use mongodb::Collection;
 use mongodb::bson::{Document, RawDocument, RawDocumentBuf};
 use mongodb::options::{
     CountOptions, DeleteOptions, DropCollectionOptions, EstimatedDocumentCountOptions,
-    FindOneOptions, InsertManyOptions, InsertOneOptions,
+    FindOneOptions, FindOptions, InsertManyOptions, InsertOneOptions,
 };
 use mongodb::results::{DeleteResult, InsertManyResult, InsertOneResult};
 
@@ -212,6 +214,41 @@ pub extern "C" fn mongoac_collection_estimated_document_count_async(
     let options = safe_optional_as_ref!(options);
 
     safe_into_raw!(coll.estimated_document_count_async(options))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_find(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    filter: BsonViewT,
+    options: *const FindOptionsT,
+    error: *mut ErrorT,
+) -> *mut CursorT {
+    let error = safe_optional_error_as_mut!(error);
+    let collection = safe_as_ref_with_error!(collection, error);
+    let session = safe_optional_as_mut!(session);
+    let filter = safe_bson_view_with_error!(filter, error);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(safe_result!(
+        collection.find(session, filter, options),
+        error
+    ))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_find_async(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    filter: BsonViewT,
+    options: *const FindOptionsT,
+) -> *mut FutureT {
+    let collection = safe_as_ref!(collection);
+    let session = safe_optional_as_mut!(session);
+    let filter = safe_bson_view!(filter);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(collection.find_async(session, filter, options))
 }
 
 #[unsafe(no_mangle)]
@@ -512,6 +549,44 @@ impl CollectionT {
         })
     }
 
+    fn find(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        filter: &RawDocument,
+        options: Option<&FindOptionsT>,
+    ) -> Result<CursorT, ErrorT> {
+        self.runtime.block_on(async {
+            let filter = Document::try_from(filter)?;
+
+            cursor_session_op!(
+                self.inner
+                    .find(filter)
+                    .with_options(options.map(Into::into)),
+                session,
+                self.runtime.downgrade()
+            )
+        })
+    }
+
+    fn find_async(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        filter: &RawDocument,
+        options: Option<&FindOptionsT>,
+    ) -> FutureT {
+        let coll = self.inner.clone();
+        let runtime = self.runtime.downgrade();
+        let session = session.map(|s| s.clone());
+        let filter = filter.to_owned();
+        let options: Option<FindOptions> = options.map(Into::into);
+
+        self.spawn::<CursorT>(async move {
+            let filter = Document::try_from(filter)?;
+
+            cursor_session_op!(coll.find(filter).with_options(options), session, runtime)
+        })
+    }
+
     fn find_one(
         &self,
         session: Option<&mut ClientSessionT>,
@@ -623,7 +698,6 @@ impl CollectionT {
     // TODO: drop_index
     // TODO: drop_indexes
     // TODO: drop_search_index
-    // TODO: find
     // TODO: find_one_and_delete
     // TODO: find_one_and_replace
     // TODO: find_one_and_update
